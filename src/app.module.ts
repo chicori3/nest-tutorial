@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import emailConfig from './config/emailConfig';
 import { validationSchema } from './config/validationSchema';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import * as process from 'process';
+import authConfig from './config/authConfig';
 
 @Module({
 	imports: [
@@ -12,7 +12,7 @@ import * as process from 'process';
 			envFilePath: [
 				`${__dirname}/config/env/.${process.env.NODE_ENV}.env`,
 			],
-			load: [emailConfig],
+			load: [emailConfig, authConfig],
 			isGlobal: true,
 			validationSchema,
 		}),

@@ -1,4 +1,8 @@
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import {
+	Injectable,
+	NotFoundException,
+	UnprocessableEntityException,
+} from '@nestjs/common';
 
 import { EmailService } from '../email/email.service';
 import * as uuid from 'uuid';
@@ -7,13 +11,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entity/user.entity';
 import { DataSource, Repository } from 'typeorm';
 import { ulid } from 'ulid';
-import { query } from 'express';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UsersService {
 	constructor(
 		private dataSource: DataSource,
 		private emailService: EmailService,
+		private authService: AuthService,
 		@InjectRepository(UserEntity)
 		private usersRepository: Repository<UserEntity>,
 	) {}
@@ -33,17 +38,35 @@ export class UsersService {
 	}
 
 	async login(email: string, password: string): Promise<string> {
-		// TODO: email, password와 일치하는 유저를 확인하고 없으면 에러 처리
-		// TODO: JWT를 발급
+		const user = await this.usersRepository.findOne({
+			where: { email, password },
+		});
 
-		throw new Error('Method not implemented.');
+		if (!user) {
+			throw new NotFoundException('유저가 존재하지 않습니다.');
+		}
+
+		return this.authService.login({
+			id: user.id,
+			name: user.name,
+			email: user.email,
+		});
 	}
 
 	async getUserInfo(userId: string): Promise<UserInfo> {
-		// TODO: userId와 일치하는 유저를 확인하고 없으면 에러 처리
-		// TODO: 조회된 데이터를 응답
+		const user = await this.usersRepository.findOne({
+			where: { id: userId },
+		});
 
-		throw new Error('Method not implemented.');
+		if (!user) {
+			throw new NotFoundException('유저가 존재하지 않습니다.');
+		}
+
+		return {
+			id: user.id,
+			name: user.name,
+			email: user.email,
+		};
 	}
 
 	private async checkUserExists(emailAddress: string): Promise<boolean> {
@@ -129,9 +152,18 @@ export class UsersService {
 	}
 
 	async verifyEmail(signupVerifyToken: string): Promise<string> {
-		// TODO: DB에서 signupVerifyToken으로 가입 처리 중인 유저를 조회하고 없으면 에러 처리
-		// TODO: 바로 로그인 상태가 되도록 JWT 발급
+		const user = await this.usersRepository.findOne({
+			where: { signupVerifyToken },
+		});
 
-		throw new Error('Method not implemented.');
+		if (!user) {
+			throw new NotFoundException('유저가 존재하지 않습니다.');
+		}
+
+		return this.authService.login({
+			id: user.id,
+			name: user.name,
+			email: user.email,
+		});
 	}
 }
